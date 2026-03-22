@@ -1,6 +1,6 @@
 client_id = "a8bd6337dfd32984a749965c6d253df5"
 name = "subscribe-check"
-application_url = "https://example.com"
+application_url = "https://newsletter-subcribe-production.up.railway.app"
 embedded = true
 
 [build]
@@ -21,10 +21,9 @@ api_version = "2026-04"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_customers,write_customers"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://newsletter-subcribe-production.up.railway.app/api/auth" ]
 
 [app_proxy]
-url = "https://deer-lightweight-snow-camcorders.trycloudflare.com/apps/newsletter/subscribe"
+url = "https://newsletter-subcribe-production.up.railway.app/apps/newsletter/subscribe"
 subpath = "newsletter"
 prefix = "apps"
-  
