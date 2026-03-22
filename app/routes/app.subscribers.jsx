@@ -37,20 +37,36 @@ export default function SubscribersAdmin() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
             <thead>
               <tr style={{ background: "#f6f6f7" }}>
-                <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "10px" }}>Email</th>
-                <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "10px" }}>Name</th>
-                <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "10px" }}>Shop</th>
-                <th style={{ borderBottom: "1px solid #ddd", textAlign: "left", padding: "10px" }}>Subscribed at</th>
+                {["Email", "Name", "Shop", "Subscribed at"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      borderBottom: "1px solid #ddd",
+                      textAlign: "left",
+                      padding: "10px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {subscribers.map((s, i) => (
-                <tr key={s.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
-                  <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>{s.email}</td>
+                <tr
+                  key={s.id}
+                  style={{ background: i % 2 === 0 ? "#fff" : "#fafafa" }}
+                >
+                  <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>
+                    {s.email}
+                  </td>
                   <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>
                     {`${s.firstName || ""} ${s.lastName || ""}`.trim() || "—"}
                   </td>
-                  <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>{s.shop}</td>
+                  <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>
+                    {s.shop}
+                  </td>
                   <td style={{ borderTop: "1px solid #eee", padding: "10px" }}>
                     {new Date(s.createdAt).toLocaleString()}
                   </td>

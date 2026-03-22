@@ -1,94 +1,102 @@
-<div class="newsletter-form-block" style="background:#fff;padding:16px;border:1px solid #e5e5e5;border-radius:8px;">
-  <form id="newsletter-block-form" method="post" action="/apps/newsletter/subscribe">
-    <input type="email" name="email" placeholder="Email" required style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
-    <input type="text" name="firstName" placeholder="First name" style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
-    <input type="text" name="lastName" placeholder="Last name" style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
-    <input type="hidden" name="shop" value="{{ shop.domain }}" />
-    <button type="submit" style="width:100%;padding:10px;border:none;border-radius:4px;background:#5c6ac4;color:#fff;font-weight:bold;">Subscribe</button>
+<div class="newsletter-form-block" style="background:#fff;padding:16px;border:1px solid #e5e5e5;border-radius:8px;max-width:480px;">
+  <form id="newsletter-block-form">
+    <input
+      type="email"
+      name="email"
+      placeholder="Email address"
+      required
+      style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;"
+    />
+    <input
+      type="text"
+      name="firstName"
+      placeholder="First name"
+      style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;"
+    />
+    <input
+      type="text"
+      name="lastName"
+      placeholder="Last name"
+      style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;"
+    />
+    <button
+      type="submit"
+      id="newsletter-submit-btn"
+      style="width:100%;padding:10px;border:none;border-radius:4px;background:#5c6ac4;color:#fff;font-weight:bold;cursor:pointer;"
+    >
+      Subscribe
+    </button>
   </form>
-  <p id="newsletter-status" style="margin-top:8px;font-size:0.95rem;color:#555;"></p>
+  <p id="newsletter-status" style="margin-top:8px;font-size:0.95rem;"></p>
 </div>
 
 <script>
-  async function subscribeToNewsletter({ email, firstName, lastName, shop }) {
-    const res = await fetch('/apps/newsletter/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, firstName, lastName, shop }),
-    });
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('newsletter-block-form');
+  const status = document.getElementById('newsletter-status');
+  const btn = document.getElementById('newsletter-submit-btn');
 
-    if (!res.ok) {
-      return { status: 'error', message: `Newsletter API returned ${res.status}` };
-    }
+  if (!form) return;
 
-    try {
-      return await res.json();
-    } catch (err) {
-      return { status: 'error', message: 'Invalid response from newsletter API' };
-    }
-  }
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-  function normalizeEmail(raw) {
-    return (raw || '').trim().toLowerCase();
-  }
-
-  async function handleNewsletterSubmission(event, form, useThemeSubmit) {
-    event.preventDefault();
-
-    const status = document.getElementById('newsletter-status');
-    const formData = new FormData(form);
-    const email = normalizeEmail(formData.get('contact[email]') || formData.get('email') || '');
+    const email = (form.querySelector('[name="email"]').value || '').trim();
+    const firstName = (form.querySelector('[name="firstName"]').value || '').trim();
+    const lastName = (form.querySelector('[name="lastName"]').value || '').trim();
 
     if (!email) {
-      status.textContent = 'Please enter a valid email to subscribe.';
+      status.style.color = '#cc0000';
+      status.textContent = 'Please enter a valid email address.';
       return;
     }
-    status.textContent = 'Checking subscription...';
 
-    const result = await subscribeToNewsletter({
-      email,
-      firstName: formData.get('contact[first_name]') || formData.get('firstName') || '',
-      lastName: formData.get('contact[last_name]') || formData.get('lastName') || '',
-      shop: '{{ shop.domain }}',
-    });
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    status.textContent = '';
 
-    if (result.status === 'subscribed' || result.status === 'already_subscribed') {
-      status.textContent = 'Subscription checked: ' + (result.message || result.status);
+    try {
+      const res = await fetch('/apps/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          firstName,
+          lastName,
+          shop: '{{ shop.domain }}',
+        }),
+      });
 
-      if (useThemeSubmit) {
-        // continue with default theme form submit (so visitor stays on same page
-        // or the theme's normal success path). Do not redirect to /apps path.
-        form.removeEventListener('submit', contactFooterSubmitHandler);
-        form.submit();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('Invalid response from server');
       }
 
-      return;
-    }
-
-    status.textContent = result.message || 'Subscription check failed; please try again.';
-  }
-
-  function contactFooterSubmitHandler(event) {
-    const form = document.getElementById('ContactFooter');
-    if (!form || event.target !== form) return;
-    handleNewsletterSubmission(event, form, true);
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    const contactForm = document.getElementById('ContactFooter');
-    const blockForm = document.getElementById('newsletter-block-form');
-
-    if (contactForm) {
-      contactForm.addEventListener('submit', contactFooterSubmitHandler);
-    }
-
-    if (blockForm) {
-      blockForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
-        await handleNewsletterSubmission(event, blockForm, false); // no redirect, stay on page
-      });
+      if (data.status === 'subscribed') {
+        form.style.display = 'none';
+        status.style.color = '#008060';
+        status.textContent = data.message || 'You have been subscribed successfully, thank you!';
+      } else if (data.status === 'already_subscribed') {
+        form.style.display = 'none';
+        status.style.color = '#888';
+        status.textContent = data.message || "You've already subscribed, thank you!";
+      } else {
+        status.style.color = '#cc0000';
+        status.textContent = data.message || 'Something went wrong, please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Subscribe';
+      }
+    } catch (err) {
+      console.error('Subscribe error:', err);
+      status.style.color = '#cc0000';
+      status.textContent = 'Network error, please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Subscribe';
     }
   });
+});
 </script>
 
 {% schema %}
