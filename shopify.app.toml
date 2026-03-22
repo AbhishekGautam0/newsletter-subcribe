@@ -24,6 +24,6 @@ scopes = "write_metaobject_definitions,write_metaobjects,write_products,read_cus
 redirect_urls = [ "https://newsletter-subcribe-production.up.railway.app/api/auth" ]
 
 [app_proxy]
-url = "https://newsletter-subcribe-production.up.railway.app/apps/newsletter/subscribe"
+url = "https://newsletter-subcribe-production.up.railway.app"
 subpath = "newsletter"
 prefix = "apps"
