@@ -22,3 +22,9 @@ export async function getSubscribers() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function deleteSubscriberByEmail(email) {
+  return db.subscriber.deleteMany({
+    where: { email: email.trim().toLowerCase() },
+  });
+}
