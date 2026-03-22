@@ -1,0 +1,100 @@
+<div class="newsletter-form-block" style="background:#fff;padding:16px;border:1px solid #e5e5e5;border-radius:8px;">
+  <form id="newsletter-block-form" method="post" action="/apps/newsletter/subscribe">
+    <input type="email" name="email" placeholder="Email" required style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
+    <input type="text" name="firstName" placeholder="First name" style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
+    <input type="text" name="lastName" placeholder="Last name" style="width:100%;padding:10px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;" />
+    <input type="hidden" name="shop" value="{{ shop.domain }}" />
+    <button type="submit" style="width:100%;padding:10px;border:none;border-radius:4px;background:#5c6ac4;color:#fff;font-weight:bold;">Subscribe</button>
+  </form>
+  <p id="newsletter-status" style="margin-top:8px;font-size:0.95rem;color:#555;"></p>
+</div>
+
+<script>
+  async function subscribeToNewsletter({ email, firstName, lastName, shop }) {
+    const res = await fetch('/apps/newsletter/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, firstName, lastName, shop }),
+    });
+
+    if (!res.ok) {
+      return { status: 'error', message: `Newsletter API returned ${res.status}` };
+    }
+
+    try {
+      return await res.json();
+    } catch (err) {
+      return { status: 'error', message: 'Invalid response from newsletter API' };
+    }
+  }
+
+  function normalizeEmail(raw) {
+    return (raw || '').trim().toLowerCase();
+  }
+
+  async function handleNewsletterSubmission(event, form, useThemeSubmit) {
+    event.preventDefault();
+
+    const status = document.getElementById('newsletter-status');
+    const formData = new FormData(form);
+    const email = normalizeEmail(formData.get('contact[email]') || formData.get('email') || '');
+
+    if (!email) {
+      status.textContent = 'Please enter a valid email to subscribe.';
+      return;
+    }
+    status.textContent = 'Checking subscription...';
+
+    const result = await subscribeToNewsletter({
+      email,
+      firstName: formData.get('contact[first_name]') || formData.get('firstName') || '',
+      lastName: formData.get('contact[last_name]') || formData.get('lastName') || '',
+      shop: '{{ shop.domain }}',
+    });
+
+    if (result.status === 'subscribed' || result.status === 'already_subscribed') {
+      status.textContent = 'Subscription checked: ' + (result.message || result.status);
+
+      if (useThemeSubmit) {
+        // continue with default theme form submit (so visitor stays on same page
+        // or the theme's normal success path). Do not redirect to /apps path.
+        form.removeEventListener('submit', contactFooterSubmitHandler);
+        form.submit();
+      }
+
+      return;
+    }
+
+    status.textContent = result.message || 'Subscription check failed; please try again.';
+  }
+
+  function contactFooterSubmitHandler(event) {
+    const form = document.getElementById('ContactFooter');
+    if (!form || event.target !== form) return;
+    handleNewsletterSubmission(event, form, true);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const contactForm = document.getElementById('ContactFooter');
+    const blockForm = document.getElementById('newsletter-block-form');
+
+    if (contactForm) {
+      contactForm.addEventListener('submit', contactFooterSubmitHandler);
+    }
+
+    if (blockForm) {
+      blockForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        await handleNewsletterSubmission(event, blockForm, false); // no redirect, stay on page
+      });
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Newsletter signup",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
